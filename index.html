@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MOS廢熱溫度計算</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --panel-bg: #1e293b;
+            --metal-gray: #475569;
+            --caution-yellow: #facc15;
+            --engineering-blue: #38bdf8;
+            --emergency-red: #ef4444;
+            --text-bright: #f8fafc;
+            --cyan-accent: #22d3ee;
+        }
+        body {
+            background-color: #0f172a;
+            font-family: 'JetBrains Mono', 'Courier New', monospace;
+            color: var(--text-bright);
+        }
+        .industrial-panel {
+            background: var(--panel-bg);
+            border: 4px solid var(--metal-gray);
+            box-shadow: inset 0 0 15px rgba(0,0,0,0.5), 8px 8px 0px rgba(0,0,0,0.3);
+        }
+        .digital-display {
+            background: #000;
+            border: 2px solid #64748b;
+            color: var(--caution-yellow);
+            text-shadow: 0 0 12px rgba(250, 204, 21, 0.7);
+            font-variant-numeric: tabular-nums;
+        }
+        .input-metal {
+            background: #0f172a;
+            border-bottom: 2px solid var(--engineering-blue);
+            color: #ffffff;
+            transition: all 0.2s;
+        }
+        .input-metal:focus {
+            outline: none;
+            border-color: var(--caution-yellow);
+            background: #1e293b;
+        }
+        .input-readonly {
+            background: rgba(15, 23, 42, 0.6);
+            border-bottom: 2px solid #475569;
+            color: var(--cyan-accent);
+            cursor: not-allowed;
+            font-weight: bold;
+        }
+        .math-font {
+            font-family: 'Times New Roman', serif;
+            font-style: italic;
+        }
+        label {
+            color: #cbd5e1 !important;
+            font-weight: 600;
+        }
+        .result-item-cyan {
+            border: 1px solid var(--cyan-accent);
+            background: rgba(8, 51, 68, 0.4);
+        }
+        .status-transition {
+            transition: all 0.3s ease;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+    <div class="max-w-6xl mx-auto">
+        <!-- Header -->
+        <div class="flex flex-col md:flex-row justify-between items-center mb-8 border-b-4 border-metal-gray pb-4">
+            <div>
+                <h1 class="text-3xl font-bold tracking-tighter text-white uppercase">MOSFET Thermal Analyzer</h1>
+                <p class="text-xs text-cyan-400 mt-1 uppercase tracking-widest font-bold">Version 3.4 | Creator: Ken Huang & Randy Chen</p>
+            </div>
+            <div class="mt-4 md:mt-0 flex gap-4">
+                <div class="flex items-center gap-2 px-3 py-1 bg-slate-800 rounded border border-slate-600">
+                    <span id="led-safe" class="w-4 h-4 rounded-full bg-green-500 shadow-[0_0_15px_green]"></span>
+                    <span class="text-[10px] font-bold text-white">安全</span>
+                </div>
+                <div class="flex items-center gap-2 px-3 py-1 bg-slate-800 rounded border border-slate-600">
+                    <span id="led-warning" class="w-4 h-4 rounded-full bg-slate-800"></span>
+                    <span class="text-[10px] font-bold text-white">警告</span>
+                </div>
+                <div class="flex items-center gap-2 px-3 py-1 bg-slate-800 rounded border border-slate-600">
+                    <span id="led-danger" class="w-4 h-4 rounded-full bg-slate-800"></span>
+                    <span class="text-[10px] font-bold text-white">危險</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <!-- Left: Inputs -->
+            <div class="lg:col-span-8 space-y-6">
+                <div class="industrial-panel p-6 rounded-lg">
+                    <h2 class="text-lg font-bold mb-6 text-engineering-blue flex items-center gap-2 border-b border-slate-600 pb-2 uppercase">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                        參數輸入 (System Config)
+                    </h2>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                        <!-- 1. 電壓與佔空比 -->
+                        <div class="space-y-4">
+                            <h3 class="text-[10px] font-bold bg-slate-700 px-2 py-1 inline-block text-white rounded">1. 電壓與週期</h3>
+                            <div>
+                                <label class="block text-[10px] mb-1 text-yellow-400">輸入電壓 V<sub class="math-font">IN</sub> (V)</label>
+                                <input type="number" id="vin" step="0.1" value="12.0" class="input-metal w-full p-2 text-lg">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] mb-1 text-yellow-400">輸出電壓 V<sub class="math-font">O</sub> (V)</label>
+                                <input type="number" id="vo" step="0.1" value="5.0" class="input-metal w-full p-2 text-lg">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] mb-1 text-cyan-400">佔空比 Duty (自動計算)</label>
+                                <input type="text" id="duty" readonly class="input-readonly w-full p-2 text-lg text-center">
+                            </div>
+                        </div>
+
+                        <!-- 2. 負載與元件 -->
+                        <div class="space-y-4">
+                            <h3 class="text-[10px] font-bold bg-slate-700 px-2 py-1 inline-block text-white rounded">2. 負載與阻抗</h3>
+                            <div>
+                                <label class="block text-[10px] mb-1 text-yellow-400">輸出電流 I<sub class="math-font">O</sub> (A)</label>
+                                <input type="number" id="io" step="0.1" value="2.0" class="input-metal w-full p-2 text-lg">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] mb-1 text-yellow-400">導通阻抗 R<sub class="math-font">DS(on)</sub> (Ω)</label>
+                                <input type="number" id="rdson" step="0.001" value="0.050" class="input-metal w-full p-2 text-lg">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] mb-1 text-yellow-400">開關頻率 f<sub class="math-font">SW</sub> (MHz)</label>
+                                <input type="number" id="fsw" step="0.01" value="0.30" class="input-metal w-full p-2 text-lg">
+                            </div>
+                        </div>
+
+                        <!-- 3. 驅動時間 -->
+                        <div class="space-y-4">
+                            <h3 class="text-[10px] font-bold bg-slate-700 px-2 py-1 inline-block text-white rounded">3. 驅動時間</h3>
+                            <div>
+                                <label class="block text-[10px] mb-1 text-yellow-400">轉態時間 t<sub class="math-font">r</sub>+t<sub class="math-font">f</sub> (μs)</label>
+                                <input type="number" id="trtf" step="0.001" value="0.040" class="input-metal w-full p-2 text-lg">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] mb-1">閘極電荷 Q<sub class="math-font">g</sub> (nC)</label>
+                                <input type="number" id="qg" step="0.1" value="10" class="input-metal w-full p-2 text-lg">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] mb-1">驅動電壓 V<sub class="math-font">GS</sub> (V)</label>
+                                <input type="number" id="vgs" step="0.1" value="5.0" class="input-metal w-full p-2 text-lg">
+                            </div>
+                        </div>
+
+                        <!-- 4. IC & 死區 -->
+                        <div class="space-y-4">
+                            <h3 class="text-[10px] font-bold bg-slate-700 px-2 py-1 inline-block text-white rounded">4. IC 控制項</h3>
+                            <div>
+                                <label class="block text-[10px] mb-1">IC 靜態電流 I<sub class="math-font">CC</sub> (mA)</label>
+                                <input type="number" id="icc" step="0.1" value="5" class="input-metal w-full p-2 text-lg">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] mb-1">死區時間 t<sub class="math-font">D</sub> (ns)</label>
+                                <input type="number" id="td" step="1" value="20" class="input-metal w-full p-2 text-lg">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] mb-1">二極體壓降 V<sub class="math-font">F</sub> (V)</label>
+                                <input type="number" id="vf" step="0.1" value="0.7" class="input-metal w-full p-2 text-lg">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 損耗細項分析 -->
+                <div class="industrial-panel p-6 rounded-lg bg-slate-800/80">
+                    <div class="grid grid-cols-2 md:grid-cols-5 gap-4 text-center mb-4">
+                        <div class="p-3 rounded result-item-cyan">
+                            <p class="text-[9px] text-cyan-300 uppercase font-bold mb-1">Conduction (Main)</p>
+                            <p id="val-pon" class="text-sm font-bold text-white">0.000 W</p>
+                        </div>
+                        <div class="p-3 rounded result-item-cyan">
+                            <p class="text-[9px] text-cyan-300 uppercase font-bold mb-1">Switching (Main)</p>
+                            <p id="val-psw" class="text-sm font-bold text-white">0.000 W</p>
+                        </div>
+                        <div class="p-3 rounded result-item-cyan">
+                            <p class="text-[9px] text-cyan-300 uppercase font-bold mb-1">Gate Loss</p>
+                            <p id="val-pg" class="text-sm font-bold text-white">0.000 W</p>
+                        </div>
+                        <div class="p-3 rounded result-item-cyan">
+                            <p class="text-[9px] text-cyan-300 uppercase font-bold mb-1">Dead Time</p>
+                            <p id="val-pd" class="text-sm font-bold text-white">0.000 W</p>
+                        </div>
+                        <div class="p-3 rounded result-item-cyan">
+                            <p class="text-[9px] text-cyan-300 uppercase font-bold mb-1">IC Operating</p>
+                            <p id="val-pic" class="text-sm font-bold text-white">0.000 W</p>
+                        </div>
+                    </div>
+                    <!-- 說明欄位 -->
+                    <div class="border-l-4 border-yellow-500 bg-slate-900/50 p-3">
+                        <p class="text-[11px] text-slate-300 leading-relaxed italic">
+                            <span class="text-yellow-500 font-bold mr-1">[說明]</span> 實務計算中，通常只算發熱瓦特數最大的conducting & switching loss，再乘上經驗安全係數。
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: Results -->
+            <div class="lg:col-span-4 space-y-6">
+                <div class="industrial-panel p-6 rounded-lg border-l-8 border-l-engineering-blue">
+                    <h2 class="text-lg font-bold mb-4 text-white uppercase flex items-center gap-2">熱參數設定</h2>
+                    <div class="space-y-4">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-[10px] mb-1">額定 Tj_max (°C)</label>
+                                <input type="number" id="tj-max" step="1" value="150" class="input-metal w-full p-2 font-bold">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] mb-1">環境溫度 Ta (°C)</label>
+                                <input type="number" id="ta" step="1" value="25" class="input-metal w-full p-2 font-bold">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-[10px] mb-1">θJA (°C/W)</label>
+                                <input type="number" id="theta-ja" step="1" value="62" class="input-metal w-full p-2">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] mb-1">θJC (°C/W)</label>
+                                <input type="number" id="theta-jc" step="0.1" value="2.5" class="input-metal w-full p-2">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Digital Display Panel -->
+                <div class="industrial-panel p-6 rounded-lg bg-black border-4 border-slate-600">
+                    <div class="space-y-6">
+                        <div>
+                            <p class="text-[10px] text-slate-300 mb-1 text-center uppercase tracking-widest font-bold">Total Power Loss</p>
+                            <div id="res-ptotal" class="digital-display text-4xl p-2 text-center font-bold">0.000 W</div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                             <div>
+                                <p class="text-[9px] text-slate-300 mb-1 text-center uppercase font-bold">Junction Temp. (Tj)</p>
+                                <div id="res-tj" class="digital-display text-2xl p-2 text-center font-bold status-transition">0.0 °C</div>
+                            </div>
+                            <div>
+                                <p class="text-[9px] text-slate-300 mb-1 text-center uppercase font-bold">Case Temp. (Tc)</p>
+                                <div id="res-tc" class="digital-display text-2xl p-2 text-center font-bold text-white">0.0 °C</div>
+                            </div>
+                        </div>
+                        <div id="status-box" class="p-4 text-center text-xs font-bold rounded bg-slate-800 border border-slate-600 status-transition uppercase tracking-wider min-h-[60px] flex items-center justify-center">
+                            SYSTEM READY
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <footer class="mt-8 text-center text-[10px] text-slate-400 uppercase tracking-[0.2em] font-bold">
+            Precision MOSFET Thermal Analysis | Version 3.4 Special Edition
+        </footer>
+    </div>
+
+    <script>
+        // 核心計算函數
+        function calculate() {
+            const vin = parseFloat(document.getElementById('vin').value) || 1e-9;
+            const vo = parseFloat(document.getElementById('vo').value) || 0;
+            const io = parseFloat(document.getElementById('io').value) || 0;
+            const rdson = parseFloat(document.getElementById('rdson').value) || 0;
+            const fsw_mhz = parseFloat(document.getElementById('fsw').value) || 0;
+            const trtf_us = parseFloat(document.getElementById('trtf').value) || 0;
+            const qg_nc = parseFloat(document.getElementById('qg').value) || 0;
+            const vgs = parseFloat(document.getElementById('vgs').value) || 0;
+            const icc_ma = parseFloat(document.getElementById('icc').value) || 0;
+            const td_ns = parseFloat(document.getElementById('td').value) || 0;
+            const vf = parseFloat(document.getElementById('vf').value) || 0;
+            
+            const ta = parseFloat(document.getElementById('ta').value) || 0;
+            const tja = parseFloat(document.getElementById('theta-ja').value) || 0;
+            const tjc = parseFloat(document.getElementById('theta-jc').value) || 0;
+            const tjm = parseFloat(document.getElementById('tj-max').value) || 150;
+
+            const duty = Math.min(Math.max(vo / vin, 0), 1);
+            document.getElementById('duty').value = duty.toFixed(4);
+
+            const fsw = fsw_mhz * 1e6;
+            const trtf = trtf_us * 1e-6;
+            const qg = qg_nc * 1e-9;
+            const icc = icc_ma * 1e-3;
+            const td = td_ns * 1e-9;
+
+            const pOn = Math.pow(io, 2) * rdson * duty;
+            const pSw = 0.5 * vin * io * trtf * fsw;
+            const pG = qg * vgs * fsw;
+            const pD = vf * io * fsw * td * 2;
+            const pIc = vin * icc;
+
+            const pTotal = pOn + pSw + pG + pD + pIc;
+            const tj = ta + (pTotal * tja);
+            const tc = tj - (pTotal * tjc);
+
+            document.getElementById('res-ptotal').innerText = pTotal.toFixed(3) + " W";
+            document.getElementById('res-tj').innerText = tj.toFixed(1) + " °C";
+            document.getElementById('res-tc').innerText = tc.toFixed(1) + " °C";
+            
+            document.getElementById('val-pon').innerText = pOn.toFixed(3) + " W";
+            document.getElementById('val-psw').innerText = pSw.toFixed(3) + " W";
+            document.getElementById('val-pg').innerText = pG.toFixed(3) + " W";
+            document.getElementById('val-pd').innerText = pD.toFixed(3) + " W";
+            document.getElementById('val-pic').innerText = pIc.toFixed(3) + " W";
+
+            updateStatus(tj, tjm);
+        }
+
+        function updateStatus(tj, max) {
+            const statusBox = document.getElementById('status-box');
+            const resTj = document.getElementById('res-tj');
+            const ledSafe = document.getElementById('led-safe');
+            const ledWarn = document.getElementById('led-warning');
+            const ledDanger = document.getElementById('led-danger');
+            
+            ledSafe.className = ledWarn.className = ledDanger.className = "w-4 h-4 rounded-full bg-slate-800";
+
+            if (tj >= max) {
+                ledDanger.className = "w-4 h-4 rounded-full bg-red-600 shadow-[0_0_20px_red] animate-pulse";
+                statusBox.className = "p-4 text-center text-xs font-bold rounded bg-red-600 text-white flex items-center justify-center";
+                statusBox.innerHTML = "STATUS: CRITICAL<br>OVER JUNCTION LIMIT";
+                resTj.style.color = "#ff4d4d";
+            } else if (tj > max * 0.85) {
+                ledDanger.className = "w-4 h-4 rounded-full bg-orange-500 shadow-[0_0_20px_orange]";
+                statusBox.className = "p-4 text-center text-xs font-bold rounded bg-orange-500 text-black flex items-center justify-center";
+                statusBox.innerHTML = "STATUS: DANGER<br>THERMAL HEADROOM LOW";
+                resTj.style.color = "#fb923c";
+            } else if (tj > max * 0.60) {
+                ledWarn.className = "w-4 h-4 rounded-full bg-yellow-500 shadow-[0_0_20px_yellow]";
+                statusBox.className = "p-4 text-center text-xs font-bold rounded bg-yellow-400 text-black flex items-center justify-center";
+                statusBox.innerHTML = "STATUS: WARNING<br>NORMAL HEAT DETECTED";
+                resTj.style.color = "#facc15";
+            } else {
+                ledSafe.className = "w-4 h-4 rounded-full bg-green-500 shadow-[0_0_20px_green]";
+                statusBox.className = "p-4 text-center text-xs font-bold rounded bg-green-600 text-white flex items-center justify-center";
+                statusBox.innerHTML = "STATUS: OPTIMAL<br>STABLE OPERATION";
+                resTj.style.color = "#ffffff";
+            }
+        }
+
+        const inputIds = ['vin', 'vo', 'io', 'rdson', 'fsw', 'trtf', 'qg', 'vgs', 'icc', 'td', 'vf', 'ta', 'theta-ja', 'theta-jc', 'tj-max'];
+        inputIds.forEach(id => {
+            document.getElementById(id).addEventListener('input', calculate);
+        });
+
+        window.onload = calculate;
+    </script>
+</body>
+</html>
