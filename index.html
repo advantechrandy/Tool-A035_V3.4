@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MOSFET廢熱計算V7</title>
+    <title>MOSFET廢熱計算V7.1</title>
     <!-- MathJax 用於渲染數學公式 -->
     <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
     <script>
@@ -148,11 +148,11 @@
         <header class="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 border-b-2 border-slate-700 pb-4 gap-4">
             <div>
                 <h1 class="text-3xl md:text-5xl font-black italic tracking-tighter text-white drop-shadow-lg">
-                    MOSFET廢熱計算 <span class="text-neon-green">V7</span>
+                    MOSFET廢熱計算 <span class="text-neon-green">V7.1</span>
                 </h1>
                 <p class="text-xs font-bold text-slate-400 uppercase mt-2 tracking-widest flex items-center gap-2">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
-                    CREATOR:KEN HUNG & RANDY CHEN
+                    CREATOR:ADVANTECH KEN HUNG & RANDY CHEN
                 </p>
             </div>
             <div class="flex flex-col items-start md:items-end w-full md:w-auto">
@@ -212,7 +212,7 @@
                         <input type="number" id="ripple-pct" value="30" class="input-field">
                     </div>
                     <div>
-                        <label class="label-text">死區時間 t<sub>dead</sub> (ns)</label>
+                        <label class="label-text">死區時間 T<sub>dead</sub> (ns)</label>
                         <input type="number" id="tdead" value="20" class="input-field">
                     </div>
                 </div>
@@ -261,11 +261,11 @@
                         <input type="number" id="qrr" value="18" class="input-field">
                     </div>
                     <div>
-                        <label class="label-text">轉態 t<sub>r</sub>+t<sub>f</sub> (ns)</label>
+                        <label class="label-text">轉態 T<sub>R</sub>+T<sub>F</sub> (ns)</label>
                         <input type="number" id="trtf" value="40" class="input-field">
                     </div>
                     <div>
-                        <label class="label-text">二極體 V<sub>f</sub> (V)</label>
+                        <label class="label-text">二極體 V<sub>F</sub> (V)</label>
                         <input type="number" id="vf" value="0.7" class="input-field">
                     </div>
                 </div>
@@ -339,7 +339,7 @@
             </div>
         </div>
 
-        <!-- Detailed Loss Breakdown (Per FET) - 已對齊專業軟體分類 -->
+        <!-- Detailed Loss Breakdown (Per FET) -->
         <h3 class="mt-8 mb-3 text-slate-400 font-bold text-sm tracking-widest border-b border-slate-800 pb-1">▼ LOSS BREAKDOWN (PER MOSFET)</h3>
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div class="industrial-card p-4 border-t-2 border-t-slate-500" id="card-cond">
@@ -365,7 +365,7 @@
         </div>
 
         <footer class="mt-10 text-center text-[11px] text-slate-600 font-bold uppercase tracking-widest">
-            Hardware Engineering Tool | Thermal Core v6.1 | Professional Algorithm Aligned
+            Hardware Engineering Tool | Thermal Core v7.1 | Professional Algorithm Aligned
         </footer>
     </div>
 
@@ -373,7 +373,7 @@
     <div id="formula-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4">
         <div class="industrial-card w-full max-w-4xl max-h-[90vh] overflow-y-auto p-6 md:p-8 border-info">
             <div class="flex justify-between items-center border-b border-info pb-4 mb-6">
-                <h3 class="text-2xl font-black text-info italic">V6.1 TOPOLOGY & PARALLEL FORMULAS (Pro)</h3>
+                <h3 class="text-2xl font-black text-info italic">V7.1 TOPOLOGY & PARALLEL FORMULAS (Pro)</h3>
                 <button onclick="toggleModal(false)" class="text-slate-400 hover:text-white text-4xl font-black transition-colors leading-none">&times;</button>
             </div>
             
@@ -389,11 +389,11 @@
                         </ul>
                     </div>
                     <div class="bg-sky-900/20 border-l-4 border-info p-4">
-                        <p class="font-bold text-white mb-2 text-base">Low-Side (Sync FET)</p>
+                        <p class="font-bold text-white mb-2 text-base">Low-Side (Sync FET) - <span class="text-caution">V7.1物理修正</span></p>
                         <ul class="list-disc pl-5 text-slate-300 text-xs space-y-1">
                             <li>實現零電壓切換 (ZVS)，純開關損耗近乎為零。</li>
-                            <li><span class="text-info font-bold">Body Diode 損耗：</span>包含死區時間導通，以及對側導通時自身產生的反向恢復 ($Q_{rr}$) 損耗。</li>
-                            <li>佔空比 $D_{LS} = 1 - (V_{out} / V_{in})$。</li>
+                            <li><span class="text-caution font-bold">佔空比修正：</span>死區時間是由 Body Diode 導通，主通道 $R_{DS(on)}$ 的佔空比需扣除死區時間 $D_{LS} = 1 - (V_{out} / V_{in}) - D_{dead}$。</li>
+                            <li><span class="text-info font-bold">Body Diode 損耗：</span>包含死區時間導通，以及反向恢復 ($Q_{rr}$) 損耗。因並聯分流效應，系統總 $Q_{rr}$ 約略不變，不隨 $N_p$ 翻倍。</li>
                         </ul>
                     </div>
                 </div>
@@ -416,7 +416,7 @@
                 <section>
                     <h4 class="text-info font-bold uppercase mb-2">3. 體二極體與反向恢復損耗 (Body Diode + Qrr - 僅 LS)</h4>
                     <div class="math-box text-xs md:text-sm">
-                        $$P_{deadtime(sys)} = (2 \times V_f \times I_{out} \times t_{dead} \times f_{sw}) + (Q_{rr} \times N_p \times V_{in} \times f_{sw})$$
+                        $$P_{deadtime(sys)} = (2 \times V_f \times I_{out} \times t_{dead} \times f_{sw}) + (Q_{rr\_sys} \times V_{in} \times f_{sw})$$
                     </div>
                 </section>
 
@@ -475,10 +475,13 @@
 
             const rdson_sys_nom = rdson_nom / np;
             const qg_sys = qg * np;
-            const qrr_sys = qrr * np;
+            // V7.1 物理修正：Qrr 取決於順向電流，並聯分流會使單顆 Qrr 下降，故系統總 Qrr 近似常數，不乘 Np
+            const qrr_sys = qrr; 
 
+            // V7.1 物理修正：死區時間是由 Body Diode 導通，必須從 LS 主通道的 Duty 中扣除
             const duty_hs = Math.min(vout / Math.max(vin, 0.1), 1);
-            const actual_duty = isHighSide ? duty_hs : (1 - duty_hs);
+            const duty_dead = 2 * tdead * fsw; 
+            const actual_duty = isHighSide ? duty_hs : Math.max(0, 1 - duty_hs - duty_dead);
             
             const delta_i = io * (rip_pct / 100);
             const i_rms_sys = Math.sqrt(actual_duty * (Math.pow(io, 2) + Math.pow(delta_i, 2) / 12));
@@ -493,9 +496,9 @@
                 const rdson_sys_adj = rdson_sys_nom * (1 + alpha * (estimated_tj - 25));
                 p_cond_sys = Math.pow(i_rms_sys, 2) * rdson_sys_adj;
                 
-                // 2. 拓樸損耗分配 (系統級) - 修正為符合專業軟體模型
+                // 2. 拓樸損耗分配 (系統級) 
                 if(isHighSide) {
-                    // High-Side: 僅計算 VI 交疊損耗，忽略 Qrr (歸給LS) 與微小 Coss
+                    // High-Side: 僅計算 VI 交疊損耗
                     p_sw_sys = 0.5 * vin * io * trtf * fsw;
                     p_diode_sys = 0;
                 } else {
