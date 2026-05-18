@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MOSFET廢熱計算V6.0</title>
-    <!-- MathJax 用於渲染數學公式，確保無亂碼 -->
+    <title>MOSFET廢熱計算V7</title>
+    <!-- MathJax 用於渲染數學公式 -->
     <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
     <script>
         MathJax = {
@@ -16,7 +16,6 @@
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- 優化字體：使用 JetBrains Mono 營造工程儀表感 -->
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -35,9 +34,8 @@
             font-family: 'JetBrains Mono', monospace;
             color: var(--text-main);
             overflow-x: hidden;
-            user-select: none; /* 強化工業軟體質感，防止反白 */
+            user-select: none;
         }
-        /* 工業風格卡片設計 */
         .industrial-card {
             background: linear-gradient(145deg, #1f2937, #111827);
             border: 2px solid var(--metal-border);
@@ -53,7 +51,6 @@
             border-top-left-radius: 2px;
             border-top-right-radius: 2px;
         }
-        /* LCD 螢幕顯示器風格 */
         .lcd-screen {
             background: #020617;
             border: 2px inset #334155;
@@ -92,10 +89,7 @@
             display: inline-block;
             border: 1px solid #000;
         }
-        /* 角色切換開關樣式 */
-        .role-radio {
-            display: none;
-        }
+        .role-radio { display: none; }
         .role-label {
             cursor: pointer;
             padding: 10px 12px;
@@ -142,7 +136,6 @@
             color: #fff;
             box-shadow: inset 0 0 15px rgba(0,0,0,0.5);
         }
-        /* 自定義滾動條 */
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: #0f172a; }
         ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
@@ -155,17 +148,17 @@
         <header class="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 border-b-2 border-slate-700 pb-4 gap-4">
             <div>
                 <h1 class="text-3xl md:text-5xl font-black italic tracking-tighter text-white drop-shadow-lg">
-                    MOSFET廢熱計算 <span class="text-neon-green">V6.0</span>
+                    MOSFET廢熱計算 <span class="text-neon-green">V7</span>
                 </h1>
                 <p class="text-xs font-bold text-slate-400 uppercase mt-2 tracking-widest flex items-center gap-2">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
-                    CREATOR:KEN HUNG & RANDY CHEN
+                    CREATOR:KEN HUNG & RANDY CHEN (Pro-Aligned)
                 </p>
             </div>
             <div class="flex flex-col items-start md:items-end w-full md:w-auto">
                 <button onclick="toggleModal(true)" class="mb-4 bg-transparent border-2 border-caution text-caution hover:bg-caution hover:text-black font-black text-sm px-6 py-2 rounded btn-formula flex items-center gap-2 transition-all transform hover:scale-105 active:scale-95">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                    [ 查看並聯拓樸運算公式 ]
+                    [ 查看專業級拓樸運算公式 ]
                 </button>
                 <div class="flex gap-5 bg-slate-900 px-4 py-2 border border-slate-700 rounded shadow-inner">
                     <div class="flex items-center gap-2"><span id="led-1" class="status-led bg-green-500 shadow-[0_0_8px_#22c55e]"></span><span class="text-[10px] font-bold text-slate-300">PWR</span></div>
@@ -200,7 +193,7 @@
                 <div class="grid grid-cols-2 gap-x-4 gap-y-5">
                     <div class="col-span-2 sm:col-span-1">
                         <label class="label-text">輸入電壓 V<sub>IN</sub> (V)</label>
-                        <input type="number" id="vin" value="12" class="input-field">
+                        <input type="number" id="vin" value="24" class="input-field">
                     </div>
                     <div class="col-span-2 sm:col-span-1">
                         <label class="label-text">輸出電壓 V<sub>OUT</sub> (V)</label>
@@ -208,7 +201,7 @@
                     </div>
                     <div>
                         <label class="label-text">輸出負載 I<sub>O</sub> (A)</label>
-                        <input type="number" id="io" value="20" class="input-field text-info font-bold">
+                        <input type="number" id="io" value="12.5" class="input-field text-info font-bold">
                     </div>
                     <div>
                         <label class="label-text">開關頻率 f<sub>SW</sub> (kHz)</label>
@@ -232,7 +225,6 @@
                     元件參數 (單顆 Datasheet)
                 </h2>
 
-                <!-- 並聯數量設定 (V6.0 新增) -->
                 <div class="mb-5 bg-purple-900/20 p-3 border border-neon-purple/50 rounded flex items-center justify-between">
                     <div>
                         <label class="label-text text-neon-purple font-bold block mb-1">並聯數量 N<sub>p</sub> (顆)</label>
@@ -245,7 +237,7 @@
                     <div class="col-span-2 flex gap-4">
                         <div class="w-1/2">
                             <label class="label-text">R<sub>DS(on)@25C</sub> (mΩ)</label>
-                            <input type="number" id="rdson" value="5.0" class="input-field text-white">
+                            <input type="number" id="rdson" value="13" class="input-field text-white">
                         </div>
                         <div class="w-1/2">
                             <label class="label-text">驅動電壓 V<sub>GS</sub> (V)</label>
@@ -258,7 +250,7 @@
                     </div>
                     <div>
                         <label class="label-text">Gate Charge Q<sub>g</sub> (nC)</label>
-                        <input type="number" id="qg" value="25" class="input-field">
+                        <input type="number" id="qg" value="4.5" class="input-field">
                     </div>
                     <div>
                         <label class="label-text">輸出電容 C<sub>oss</sub> (pF)</label>
@@ -266,7 +258,7 @@
                     </div>
                     <div>
                         <label class="label-text">反向恢復 Q<sub>rr</sub> (nC)</label>
-                        <input type="number" id="qrr" value="15" class="input-field">
+                        <input type="number" id="qrr" value="18" class="input-field">
                     </div>
                     <div>
                         <label class="label-text">轉態 t<sub>r</sub>+t<sub>f</sub> (ns)</label>
@@ -290,21 +282,21 @@
                     <div class="grid grid-cols-2 gap-3">
                         <div>
                             <label class="label-text text-danger font-bold">Limit T<sub>j,max</sub> (°C)</label>
-                            <input type="number" id="tj-max" value="150" class="input-field !border-danger text-danger bg-red-950/20">
+                            <input type="number" id="tj-max" value="175" class="input-field !border-danger text-danger bg-red-950/20">
                         </div>
                         <div>
                             <label class="label-text">環境 T<sub>A</sub> (°C)</label>
-                            <input type="number" id="ta" value="35" class="input-field">
+                            <input type="number" id="ta" value="60" class="input-field">
                         </div>
                     </div>
                     <div class="grid grid-cols-2 gap-3">
                         <div>
-                            <label class="label-text">結到殼 θ<sub>JC</sub> (°C/W)</label>
-                            <input type="number" id="tjc" value="2.5" class="input-field text-caution">
+                            <label class="label-text">熱阻 θ<sub>JC</sub> (°C/W)</label>
+                            <input type="number" id="tjc" value="3.2" class="input-field text-caution">
                         </div>
                         <div>
-                            <label class="label-text">殼到環 θ<sub>CA</sub> (°C/W)</label>
-                            <input type="number" id="tca" value="42.5" class="input-field text-caution">
+                            <label class="label-text">熱阻 θ<sub>CA</sub> (°C/W)</label>
+                            <input type="number" id="tca" value="42" class="input-field text-caution">
                         </div>
                     </div>
                 </div>
@@ -347,38 +339,33 @@
             </div>
         </div>
 
-        <!-- Detailed Loss Breakdown (Per FET) -->
+        <!-- Detailed Loss Breakdown (Per FET) - 已對齊專業軟體分類 -->
         <h3 class="mt-8 mb-3 text-slate-400 font-bold text-sm tracking-widest border-b border-slate-800 pb-1">▼ LOSS BREAKDOWN (PER MOSFET)</h3>
-        <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
-            <div class="industrial-card p-4 border-t-2" id="card-cond">
-                <p class="label-text text-center !mb-0">Conduction</p>
-                <p class="text-center text-[8px] text-slate-500 mb-2">I²R (單顆)</p>
-                <p id="det-pcond" class="text-center font-bold text-white text-lg">---</p>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div class="industrial-card p-4 border-t-2 border-t-slate-500" id="card-cond">
+                <p class="label-text text-center !mb-0 text-white">Conduction</p>
+                <p class="text-center text-[8px] text-slate-500 mb-2">I²R 導通損耗</p>
+                <p id="det-pcond" class="text-center font-bold text-white text-xl">---</p>
             </div>
             <div class="industrial-card p-4 border-t-2" id="card-sw">
-                <p class="label-text text-center !mb-0">Switching</p>
-                <p class="text-center text-[8px] text-slate-500 mb-2">VI 交疊 (單顆)</p>
-                <p id="det-psw" class="text-center font-bold text-white text-lg">---</p>
+                <p class="label-text text-center !mb-0" id="title-sw">Turn On/Off</p>
+                <p class="text-center text-[8px] text-slate-500 mb-2">VI 交疊切換</p>
+                <p id="det-psw" class="text-center font-bold text-white text-xl">---</p>
             </div>
-            <div class="industrial-card p-4 border-t-2" id="card-gate">
-                <p class="label-text text-center !mb-0">Gate Drive</p>
-                <p class="text-center text-[8px] text-slate-500 mb-2">Qg × Vgs × f (單顆)</p>
-                <p id="det-pgate" class="text-center font-bold text-white text-lg">---</p>
+            <div class="industrial-card p-4 border-t-2 border-t-slate-500" id="card-gate">
+                <p class="label-text text-center !mb-0 text-white">Gate Drive</p>
+                <p class="text-center text-[8px] text-slate-500 mb-2">Qg 驅動損耗</p>
+                <p id="det-pgate" class="text-center font-bold text-white text-xl">---</p>
             </div>
-            <div class="industrial-card p-4 border-t-2" id="card-coss">
-                <p class="label-text text-center !mb-0">Coss / Qrr</p>
-                <p class="text-center text-[8px] text-slate-500 mb-2">寄生電容與恢復 (單顆)</p>
-                <p id="det-pcoss" class="text-center font-bold text-white text-lg">---</p>
-            </div>
-            <div class="industrial-card p-4 border-t-2" id="card-dead">
-                <p class="label-text text-center text-caution !mb-0">Dead-time</p>
-                <p class="text-center text-[8px] text-slate-500 mb-2">二極體續流 (單顆)</p>
-                <p id="det-pdead" class="text-center font-bold text-caution text-lg">---</p>
+            <div class="industrial-card p-4 border-t-2" id="card-diode">
+                <p class="label-text text-center !mb-0" id="title-diode">Body Diode (Qrr)</p>
+                <p class="text-center text-[8px] text-slate-500 mb-2">死區續流 + 反向恢復</p>
+                <p id="det-pdiode" class="text-center font-bold text-white text-xl">---</p>
             </div>
         </div>
 
         <footer class="mt-10 text-center text-[11px] text-slate-600 font-bold uppercase tracking-widest">
-            Hardware Engineering Tool | Thermal Core v6.0 | Parallel & High/Low-Side Physics
+            Hardware Engineering Tool | Thermal Core v6.1 | Professional Algorithm Aligned
         </footer>
     </div>
 
@@ -386,7 +373,7 @@
     <div id="formula-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4">
         <div class="industrial-card w-full max-w-4xl max-h-[90vh] overflow-y-auto p-6 md:p-8 border-info">
             <div class="flex justify-between items-center border-b border-info pb-4 mb-6">
-                <h3 class="text-2xl font-black text-info italic">V6.0 TOPOLOGY & PARALLEL FORMULAS</h3>
+                <h3 class="text-2xl font-black text-info italic">V6.1 TOPOLOGY & PARALLEL FORMULAS (Pro)</h3>
                 <button onclick="toggleModal(false)" class="text-slate-400 hover:text-white text-4xl font-black transition-colors leading-none">&times;</button>
             </div>
             
@@ -396,39 +383,23 @@
                     <div class="bg-red-900/20 border-l-4 border-danger p-4">
                         <p class="font-bold text-white mb-2 text-base">High-Side (Control FET)</p>
                         <ul class="list-disc pl-5 text-slate-300 text-xs space-y-1">
-                            <li>承受全部的電壓與電流交疊開關損耗 (Hard Switching)。</li>
-                            <li>需提供對側 Body Diode 的反向恢復電荷 $Q_{rr}$。</li>
+                            <li>承受主要電壓與電流交疊開關損耗 (Turn On + Turn Off)。</li>
+                            <li>專業算法中，通常不把 $Q_{rr}$ 列入 HS 主要損耗。</li>
                             <li>佔空比 $D = V_{out} / V_{in}$。</li>
                         </ul>
                     </div>
                     <div class="bg-sky-900/20 border-l-4 border-info p-4">
                         <p class="font-bold text-white mb-2 text-base">Low-Side (Sync FET)</p>
                         <ul class="list-disc pl-5 text-slate-300 text-xs space-y-1">
-                            <li>實現零電壓切換 (ZVS)，開關損耗近乎為零。</li>
-                            <li>主導損耗為導通與死區時間的體二極體損耗。</li>
+                            <li>實現零電壓切換 (ZVS)，純開關損耗近乎為零。</li>
+                            <li><span class="text-info font-bold">Body Diode 損耗：</span>包含死區時間導通，以及對側導通時自身產生的反向恢復 ($Q_{rr}$) 損耗。</li>
                             <li>佔空比 $D_{LS} = 1 - (V_{out} / V_{in})$。</li>
                         </ul>
                     </div>
                 </div>
 
-                <!-- 並聯效應 -->
-                <section class="bg-purple-900/20 border border-neon-purple/50 p-4 rounded">
-                    <h4 class="text-neon-purple font-bold uppercase mb-2 text-base">★ 並聯操作 (Parallel $N_p$) 物理模型</h4>
-                    <p class="text-xs mb-2">當系統採用 $N_p$ 顆 MOSFET 並聯時，系統總等效參數變化如下，並依此計算總功耗再均分至單顆 FET 進行熱分析：</p>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <ul class="list-disc pl-5 text-xs space-y-1">
-                            <li>總等效內阻下降：$R_{DS(on)(sys)} = R_{DS(on)} / N_p$</li>
-                            <li>總閘極電荷增加：$Q_{g(sys)} = Q_g \times N_p$</li>
-                        </ul>
-                        <ul class="list-disc pl-5 text-xs space-y-1">
-                            <li>總輸出電容增加：$C_{oss(sys)} = C_{oss} \times N_p$</li>
-                            <li>單顆分擔功耗：$P_{total(per)} = P_{total(sys)} / N_p$</li>
-                        </ul>
-                    </div>
-                </section>
-
                 <section>
-                    <h4 class="text-info font-bold uppercase mb-2">1. 導通損耗 (系統總耗散)</h4>
+                    <h4 class="text-info font-bold uppercase mb-2">1. 導通損耗 (Conduction)</h4>
                     <div class="math-box text-xs md:text-sm">
                         $$I_{rms(sys)} = \sqrt{Duty \times \left( I_{out}^2 + \frac{\Delta I_L^2}{12} \right)}$$
                         $$P_{cond(sys)} = I_{rms(sys)}^2 \times \left(\frac{R_{DS(on)@25^\circ C}}{N_p}\right) \times [1 + \alpha \times (T_j - 25)]$$
@@ -436,27 +407,23 @@
                 </section>
 
                 <section>
-                    <h4 class="text-info font-bold uppercase mb-2">2. 切換與 $Q_{rr}$ 損耗 (系統總耗散，HS為主)</h4>
+                    <h4 class="text-info font-bold uppercase mb-2">2. 切換損耗 (Switching - 僅 HS)</h4>
                     <div class="math-box text-xs md:text-sm">
                         $$P_{sw(sys)} = \frac{1}{2} \times V_{in} \times I_{out} \times (t_r + t_f) \times f_{sw}$$
-                        $$P_{coss\_qrr(sys)} = \left(\frac{1}{2} (C_{oss} \times N_p) V_{in}^2 f_{sw}\right) + \left((Q_{rr} \times N_p) V_{in} f_{sw}\right)$$
                     </div>
                 </section>
 
                 <section>
-                    <h4 class="text-info font-bold uppercase mb-2">3. 死區時間與閘極驅動 (系統總耗散)</h4>
+                    <h4 class="text-info font-bold uppercase mb-2">3. 體二極體與反向恢復損耗 (Body Diode + Qrr - 僅 LS)</h4>
                     <div class="math-box text-xs md:text-sm">
-                        $$P_{deadtime(sys)} = 2 \times V_f \times I_{out} \times t_{dead} \times f_{sw} \quad \text{(僅 LS 發生)}$$
+                        $$P_{deadtime(sys)} = (2 \times V_f \times I_{out} \times t_{dead} \times f_{sw}) + (Q_{rr} \times N_p \times V_{in} \times f_{sw})$$
+                    </div>
+                </section>
+
+                <section>
+                    <h4 class="text-info font-bold uppercase mb-2">4. 閘極驅動 (Gate Drive)</h4>
+                    <div class="math-box text-xs md:text-sm">
                         $$P_{gate(sys)} = (Q_g \times N_p) \times V_{gs} \times f_{sw}$$
-                    </div>
-                </section>
-
-                <section>
-                    <h4 class="text-info font-bold uppercase mb-2">4. 單顆熱疊代網絡 (Per FET)</h4>
-                    <div class="math-box text-xs md:text-sm">
-                        $$P_{total(per)} = \frac{P_{cond(sys)} + P_{sw(sys)} + P_{coss\_qrr(sys)} + P_{deadtime(sys)} + P_{gate(sys)}}{N_p}$$
-                        $$T_c = T_a + (P_{total(per)} \times \theta_{CA})$$
-                        $$T_j = T_c + (P_{total(per)} \times \theta_{JC})$$
                     </div>
                 </section>
             </div>
@@ -468,7 +435,6 @@
     </div>
 
     <script>
-        // 滿足使用者需求：禁止滑鼠右鍵選單，且不顯示提示
         document.addEventListener('contextmenu', e => e.preventDefault());
 
         function toggleModal(show) {
@@ -488,12 +454,10 @@
             const rip_pct = parseFloat(document.getElementById('ripple-pct').value) || 0;
             const tdead = (parseFloat(document.getElementById('tdead').value) || 0) * 1e-9;
             
-            // 拓樸與並聯數量
             const isHighSide = document.getElementById('role-hs').checked;
             const np = Math.max(1, parseInt(document.getElementById('np').value) || 1);
             document.getElementById('display-np').innerText = `Np = ${np}`;
 
-            // 單顆 MOSFET 參數
             const rdson_nom = (parseFloat(document.getElementById('rdson').value) || 0) / 1000;
             const vgs = parseFloat(document.getElementById('vgs').value) || 5;
             const alpha = parseFloat(document.getElementById('alpha').value) || 0.004;
@@ -503,20 +467,16 @@
             const trtf = (parseFloat(document.getElementById('trtf').value) || 0) * 1e-9;
             const vf = parseFloat(document.getElementById('vf').value) || 0;
 
-            // 熱參數 (以單顆元件為基準)
             const tjc = parseFloat(document.getElementById('tjc').value) || 0;
             const tca = parseFloat(document.getElementById('tca').value) || 0;
             const tja = tjc + tca;
             const ta = parseFloat(document.getElementById('ta').value) || 25;
             const tj_max = parseFloat(document.getElementById('tj-max').value) || 150;
 
-            // --- 系統等效參數轉換 (Parallel Physics) ---
             const rdson_sys_nom = rdson_nom / np;
             const qg_sys = qg * np;
-            const coss_sys = coss * np;
             const qrr_sys = qrr * np;
 
-            // --- 基礎拓樸運算 ---
             const duty_hs = Math.min(vout / Math.max(vin, 0.1), 1);
             const actual_duty = isHighSide ? duty_hs : (1 - duty_hs);
             
@@ -526,29 +486,33 @@
             // --- 熱疊代運算迴圈 ---
             let estimated_tj = ta + 5; 
             let p_total_sys = 0, p_total_per = 0;
-            let p_cond_sys = 0, p_sw_sys = 0, p_gate_sys = 0, p_coss_qrr_sys = 0, p_dead_sys = 0;
+            let p_cond_sys = 0, p_sw_sys = 0, p_gate_sys = 0, p_diode_sys = 0;
 
             for(let i = 0; i < 6; i++) {
                 // 1. 導通損耗 (受 Tj 影響)
                 const rdson_sys_adj = rdson_sys_nom * (1 + alpha * (estimated_tj - 25));
                 p_cond_sys = Math.pow(i_rms_sys, 2) * rdson_sys_adj;
                 
-                // 2. 拓樸損耗分配 (系統級)
+                // 2. 拓樸損耗分配 (系統級) - 修正為符合專業軟體模型
                 if(isHighSide) {
+                    // High-Side: 僅計算 VI 交疊損耗，忽略 Qrr (歸給LS) 與微小 Coss
                     p_sw_sys = 0.5 * vin * io * trtf * fsw;
-                    p_coss_qrr_sys = (0.5 * coss_sys * Math.pow(vin, 2) * fsw) + (qrr_sys * vin * fsw);
-                    p_dead_sys = 0; // HS 不負責死區續流
+                    p_diode_sys = 0;
                 } else {
-                    p_sw_sys = 0; // LS ZVS
-                    p_coss_qrr_sys = 0; // LS Coss 能量多數循環
-                    p_dead_sys = 2 * vf * io * tdead * fsw; // LS 負擔死區時間導通
+                    // Low-Side: ZVS 開關損耗為 0
+                    p_sw_sys = 0; 
+                    // Low-Side: Body Diode 損耗 = 死區順向導通 + 反向恢復(Qrr)
+                    const p_dead_cond = 2 * vf * io * tdead * fsw;
+                    const p_qrr_recovery = qrr_sys * vin * fsw;
+                    p_diode_sys = p_dead_cond + p_qrr_recovery;
                 }
 
+                // 驅動損耗
                 p_gate_sys = qg_sys * vgs * fsw; 
                 
-                p_total_sys = p_cond_sys + p_sw_sys + p_gate_sys + p_coss_qrr_sys + p_dead_sys;
+                p_total_sys = p_cond_sys + p_sw_sys + p_gate_sys + p_diode_sys;
                 
-                // 3. 計算單顆 MOSFET 的功耗與溫度
+                // 計算單顆 MOSFET 的功耗與溫度
                 p_total_per = p_total_sys / np;
                 estimated_tj = ta + (p_total_per * tja);
             }
@@ -562,16 +526,24 @@
             document.getElementById('res-tc').innerText = estimated_tc.toFixed(1) + " °C";
             document.getElementById('res-duty').innerText = (actual_duty * 100).toFixed(1) + " %";
             
-            // Breakdown 顯示「單顆 MOSFET (Per FET)」的損耗，方便工程師評估單體極限
+            // Breakdown 單顆顯示
             document.getElementById('det-pcond').innerText = (p_cond_sys / np).toFixed(3) + " W";
             document.getElementById('det-psw').innerText = (p_sw_sys / np).toFixed(3) + " W";
             document.getElementById('det-pgate').innerText = (p_gate_sys / np).toFixed(3) + " W";
-            document.getElementById('det-pcoss').innerText = (p_coss_qrr_sys / np).toFixed(3) + " W";
-            document.getElementById('det-pdead').innerText = (p_dead_sys / np).toFixed(3) + " W";
+            document.getElementById('det-pdiode').innerText = (p_diode_sys / np).toFixed(3) + " W";
 
-            // 視覺回饋 (高亮主要損耗卡片)
-            document.getElementById('card-sw').style.borderColor = isHighSide ? '#ef4444' : '#374151';
-            document.getElementById('card-dead').style.borderColor = !isHighSide ? '#fbbf24' : '#374151';
+            // 視覺回饋：根據角色改變 UI 卡片強調
+            if(isHighSide) {
+                document.getElementById('card-sw').style.borderColor = '#ef4444'; // Red for HS
+                document.getElementById('title-sw').className = "label-text text-center text-danger !mb-0 font-bold";
+                document.getElementById('card-diode').style.borderColor = '#374151'; // Dim LS
+                document.getElementById('title-diode').className = "label-text text-center !mb-0";
+            } else {
+                document.getElementById('card-sw').style.borderColor = '#374151'; // Dim HS
+                document.getElementById('title-sw').className = "label-text text-center !mb-0";
+                document.getElementById('card-diode').style.borderColor = '#38bdf8'; // Blue for LS
+                document.getElementById('title-diode').className = "label-text text-center text-info !mb-0 font-bold";
+            }
 
             updateWarning(estimated_tj, tj_max);
         }
@@ -604,7 +576,6 @@
             if (e.key === "Escape") toggleModal(false);
         });
 
-        // 監聽所有輸入欄位即時重算
         const inputs = document.querySelectorAll('input');
         inputs.forEach(input => input.addEventListener('input', calculate));
 
