@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MOSFET廢熱計算V7.1</title>
+    <title>MOSFET廢熱計算V7.3</title>
     <!-- MathJax 用於渲染數學公式 -->
     <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
     <script>
@@ -140,6 +140,24 @@
         ::-webkit-scrollbar-track { background: #0f172a; }
         ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+        
+        /* 熱阻輸入模式切換樣式 */
+        .thermal-radio { display: none; }
+        .thermal-label {
+            cursor: pointer;
+            padding: 6px 4px;
+            background: #1e293b;
+            color: #94a3b8;
+            border-radius: 4px;
+            border: 1px solid #334155;
+            transition: all 0.2s;
+        }
+        .thermal-radio:checked + .thermal-label {
+            background: #0f172a;
+            color: var(--caution);
+            border-color: var(--caution);
+            box-shadow: inset 0 0 5px rgba(251, 191, 36, 0.3);
+        }
     </style>
 </head>
 <body class="p-4 md:p-6 lg:p-8 text-sm">
@@ -148,7 +166,7 @@
         <header class="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 border-b-2 border-slate-700 pb-4 gap-4">
             <div>
                 <h1 class="text-3xl md:text-5xl font-black italic tracking-tighter text-white drop-shadow-lg">
-                    MOSFET廢熱計算 <span class="text-neon-green">V7.1</span>
+                    MOSFET廢熱計算 <span class="text-neon-green">V7.3</span>
                 </h1>
                 <p class="text-xs font-bold text-slate-400 uppercase mt-2 tracking-widest flex items-center gap-2">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
@@ -289,20 +307,49 @@
                             <input type="number" id="ta" value="60" class="input-field">
                         </div>
                     </div>
-                    <div class="grid grid-cols-2 gap-3">
-                        <div>
+                    
+                    <!-- V7.3: 熱阻輸入模式切換 (4種模式) -->
+                    <div class="mb-3 mt-4 border-b border-slate-700 pb-3">
+                        <label class="label-text block mb-2 text-info">熱阻輸入模式 (Thermal Resistance Mode):</label>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <input type="radio" name="thermal-mode" id="mode-jcca" value="jcca" class="thermal-radio" checked onchange="toggleThermalMode()">
+                                <label for="mode-jcca" class="thermal-label text-[10px] w-full block text-center">θJC + θCA</label>
+                            </div>
+                            <div>
+                                <input type="radio" name="thermal-mode" id="mode-jajc" value="jajc" class="thermal-radio" onchange="toggleThermalMode()">
+                                <label for="mode-jajc" class="thermal-label text-[10px] w-full block text-center">θJA + θJC</label>
+                            </div>
+                            <div>
+                                <input type="radio" name="thermal-mode" id="mode-ja" value="ja" class="thermal-radio" onchange="toggleThermalMode()">
+                                <label for="mode-ja" class="thermal-label text-[10px] w-full block text-center">僅 θJA</label>
+                            </div>
+                            <div>
+                                <input type="radio" name="thermal-mode" id="mode-ca" value="ca" class="thermal-radio" onchange="toggleThermalMode()">
+                                <label for="mode-ca" class="thermal-label text-[10px] w-full block text-center">僅 θCA</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 動態熱阻輸入區塊 -->
+                    <div id="thermal-inputs" class="grid grid-cols-2 gap-3">
+                        <div id="wrap-tjc">
                             <label class="label-text">熱阻 θ<sub>JC</sub> (°C/W)</label>
                             <input type="number" id="tjc" value="3.2" class="input-field text-caution">
                         </div>
-                        <div>
+                        <div id="wrap-tca">
                             <label class="label-text">熱阻 θ<sub>CA</sub> (°C/W)</label>
                             <input type="number" id="tca" value="42" class="input-field text-caution">
+                        </div>
+                        <div id="wrap-tja" class="hidden">
+                            <label class="label-text">總熱阻 θ<sub>JA</sub> (°C/W)</label>
+                            <input type="number" id="tja-input" value="45.2" class="input-field text-caution">
                         </div>
                     </div>
                 </div>
 
                 <!-- 結果顯示螢幕 -->
-                <div class="lcd-screen p-4 rounded mb-4">
+                <div class="lcd-screen p-4 rounded mb-4 mt-6">
                     <div class="flex justify-between items-center mb-1">
                         <span class="text-[10px] bg-slate-800 text-slate-300 px-2 py-0.5 rounded font-bold" id="display-np">Np = 1</span>
                         <span class="text-[10px] text-neon-green font-bold tracking-widest animate-pulse">LIVE SYS</span>
@@ -319,11 +366,11 @@
                     
                     <div class="grid grid-cols-3 gap-2">
                         <div>
-                            <p class="text-[8px] font-bold uppercase text-slate-400">T_junction</p>
+                            <p class="text-[8px] font-bold uppercase text-slate-400">結溫 (Tj)</p>
                             <div id="res-tj" class="text-xl font-bold text-white">0.0°C</div>
                         </div>
                         <div class="border-l border-slate-700 pl-2">
-                            <p class="text-[8px] font-bold uppercase text-info">T_case</p>
+                            <p class="text-[8px] font-bold uppercase text-info">殼溫 (Tc)</p>
                             <div id="res-tc" class="text-xl font-bold text-info">0.0°C</div>
                         </div>
                         <div class="border-l border-slate-700 pl-2">
@@ -365,7 +412,7 @@
         </div>
 
         <footer class="mt-10 text-center text-[11px] text-slate-600 font-bold uppercase tracking-widest">
-            Hardware Engineering Tool | Thermal Core v7.1 | Professional Algorithm Aligned
+            Hardware Engineering Tool | Thermal Core v7.3 | Multi-Thermal Mode Supported
         </footer>
     </div>
 
@@ -373,7 +420,7 @@
     <div id="formula-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4">
         <div class="industrial-card w-full max-w-4xl max-h-[90vh] overflow-y-auto p-6 md:p-8 border-info">
             <div class="flex justify-between items-center border-b border-info pb-4 mb-6">
-                <h3 class="text-2xl font-black text-info italic">V7.1 TOPOLOGY & PARALLEL FORMULAS (Pro)</h3>
+                <h3 class="text-2xl font-black text-info italic">V7.3 TOPOLOGY & PARALLEL FORMULAS</h3>
                 <button onclick="toggleModal(false)" class="text-slate-400 hover:text-white text-4xl font-black transition-colors leading-none">&times;</button>
             </div>
             
@@ -389,7 +436,7 @@
                         </ul>
                     </div>
                     <div class="bg-sky-900/20 border-l-4 border-info p-4">
-                        <p class="font-bold text-white mb-2 text-base">Low-Side (Sync FET) - <span class="text-caution">V7.1物理修正</span></p>
+                        <p class="font-bold text-white mb-2 text-base">Low-Side (Sync FET)</p>
                         <ul class="list-disc pl-5 text-slate-300 text-xs space-y-1">
                             <li>實現零電壓切換 (ZVS)，純開關損耗近乎為零。</li>
                             <li><span class="text-caution font-bold">佔空比修正：</span>死區時間是由 Body Diode 導通，主通道 $R_{DS(on)}$ 的佔空比需扣除死區時間 $D_{LS} = 1 - (V_{out} / V_{in}) - D_{dead}$。</li>
@@ -399,33 +446,26 @@
                 </div>
 
                 <section>
-                    <h4 class="text-info font-bold uppercase mb-2">1. 導通損耗 (Conduction)</h4>
+                    <h4 class="text-info font-bold uppercase mb-2">★ 熱阻運算邏輯 (Thermal Physics)</h4>
                     <div class="math-box text-xs md:text-sm">
-                        $$I_{rms(sys)} = \sqrt{Duty \times \left( I_{out}^2 + \frac{\Delta I_L^2}{12} \right)}$$
-                        $$P_{cond(sys)} = I_{rms(sys)}^2 \times \left(\frac{R_{DS(on)@25^\circ C}}{N_p}\right) \times [1 + \alpha \times (T_j - 25)]$$
+                        $$\text{基本關係式：} \quad \theta_{JA} = \theta_{JC} + \theta_{CA}$$
+                        $$\text{結溫 } T_j = T_A + (P_{total(per)} \times \theta_{JA})$$
+                        $$\text{殼溫 } T_c = T_A + (P_{total(per)} \times \theta_{CA})$$
+                        <ul class="list-disc pl-5 mt-3 text-slate-400">
+                            <li>若僅提供 $\theta_{CA}$，則 $T_j$ 無法計算，狀態改為 INFO。</li>
+                            <li>若僅提供 $\theta_{JA}$，則 $T_c$ 無法計算。</li>
+                        </ul>
                     </div>
                 </section>
 
                 <section>
-                    <h4 class="text-info font-bold uppercase mb-2">2. 切換損耗 (Switching - 僅 HS)</h4>
+                    <h4 class="text-info font-bold uppercase mb-2">1. 導通與開關損耗</h4>
                     <div class="math-box text-xs md:text-sm">
+                        $$P_{cond(sys)} = I_{rms(sys)}^2 \times \left(\frac{R_{DS(on)@25^\circ C}}{N_p}\right) \times [1 + \alpha \times (T_j - 25)]$$
                         $$P_{sw(sys)} = \frac{1}{2} \times V_{in} \times I_{out} \times (t_r + t_f) \times f_{sw}$$
                     </div>
                 </section>
 
-                <section>
-                    <h4 class="text-info font-bold uppercase mb-2">3. 體二極體與反向恢復損耗 (Body Diode + Qrr - 僅 LS)</h4>
-                    <div class="math-box text-xs md:text-sm">
-                        $$P_{deadtime(sys)} = (2 \times V_f \times I_{out} \times t_{dead} \times f_{sw}) + (Q_{rr\_sys} \times V_{in} \times f_{sw})$$
-                    </div>
-                </section>
-
-                <section>
-                    <h4 class="text-info font-bold uppercase mb-2">4. 閘極驅動 (Gate Drive)</h4>
-                    <div class="math-box text-xs md:text-sm">
-                        $$P_{gate(sys)} = (Q_g \times N_p) \times V_{gs} \times f_{sw}$$
-                    </div>
-                </section>
             </div>
             
             <div class="mt-8 pt-4 border-t border-slate-700 text-center">
@@ -443,6 +483,33 @@
             if (show && window.MathJax) {
                 window.MathJax.typeset();
             }
+        }
+
+        // V7.3: 動態切換熱阻輸入模式 UI
+        function toggleThermalMode() {
+            const mode = document.querySelector('input[name="thermal-mode"]:checked').value;
+            const wrapTjc = document.getElementById('wrap-tjc');
+            const wrapTca = document.getElementById('wrap-tca');
+            const wrapTja = document.getElementById('wrap-tja');
+            
+            // 重置顯示狀態
+            wrapTjc.className = 'hidden';
+            wrapTca.className = 'hidden';
+            wrapTja.className = 'hidden';
+
+            if (mode === 'jcca') {
+                wrapTjc.className = 'block';
+                wrapTca.className = 'block';
+            } else if (mode === 'jajc') {
+                wrapTja.className = 'block';
+                wrapTjc.className = 'block';
+            } else if (mode === 'ja') {
+                wrapTja.className = 'col-span-2 block';
+            } else if (mode === 'ca') {
+                wrapTca.className = 'col-span-2 block';
+            }
+            
+            calculate(); 
         }
 
         function calculate() {
@@ -467,18 +534,31 @@
             const trtf = (parseFloat(document.getElementById('trtf').value) || 0) * 1e-9;
             const vf = parseFloat(document.getElementById('vf').value) || 0;
 
-            const tjc = parseFloat(document.getElementById('tjc').value) || 0;
-            const tca = parseFloat(document.getElementById('tca').value) || 0;
-            const tja = tjc + tca;
             const ta = parseFloat(document.getElementById('ta').value) || 25;
             const tj_max = parseFloat(document.getElementById('tj-max').value) || 150;
 
+            // --- V7.3 判斷熱阻模式並提取數值 ---
+            const mode = document.querySelector('input[name="thermal-mode"]:checked').value;
+            let tja = null, tca = null, tjc = null;
+
+            if (mode === 'jcca') {
+                tjc = parseFloat(document.getElementById('tjc').value) || 0;
+                tca = parseFloat(document.getElementById('tca').value) || 0;
+                tja = tjc + tca;
+            } else if (mode === 'jajc') {
+                tja = parseFloat(document.getElementById('tja-input').value) || 0;
+                tjc = parseFloat(document.getElementById('tjc').value) || 0;
+                tca = Math.max(0, tja - tjc); // 防止出現負數熱阻
+            } else if (mode === 'ja') {
+                tja = parseFloat(document.getElementById('tja-input').value) || 0;
+            } else if (mode === 'ca') {
+                tca = parseFloat(document.getElementById('tca').value) || 0;
+            }
+
             const rdson_sys_nom = rdson_nom / np;
             const qg_sys = qg * np;
-            // V7.1 物理修正：Qrr 取決於順向電流，並聯分流會使單顆 Qrr 下降，故系統總 Qrr 近似常數，不乘 Np
             const qrr_sys = qrr; 
 
-            // V7.1 物理修正：死區時間是由 Body Diode 導通，必須從 LS 主通道的 Duty 中扣除
             const duty_hs = Math.min(vout / Math.max(vin, 0.1), 1);
             const duty_dead = 2 * tdead * fsw; 
             const actual_duty = isHighSide ? duty_hs : Math.max(0, 1 - duty_hs - duty_dead);
@@ -488,46 +568,46 @@
 
             // --- 熱疊代運算迴圈 ---
             let estimated_tj = ta + 5; 
+            let estimated_tc = ta + 5; 
             let p_total_sys = 0, p_total_per = 0;
             let p_cond_sys = 0, p_sw_sys = 0, p_gate_sys = 0, p_diode_sys = 0;
 
             for(let i = 0; i < 6; i++) {
-                // 1. 導通損耗 (受 Tj 影響)
-                const rdson_sys_adj = rdson_sys_nom * (1 + alpha * (estimated_tj - 25));
+                // 如果缺乏 tja，我們暫時使用 tc 來近似計算 Rds(on) 升溫影響
+                const temp_for_rdson = (tja !== null) ? estimated_tj : estimated_tc;
+                const rdson_sys_adj = rdson_sys_nom * (1 + alpha * (temp_for_rdson - 25));
+                
                 p_cond_sys = Math.pow(i_rms_sys, 2) * rdson_sys_adj;
                 
-                // 2. 拓樸損耗分配 (系統級) 
+                // 拓樸損耗分配 
                 if(isHighSide) {
-                    // High-Side: 僅計算 VI 交疊損耗
                     p_sw_sys = 0.5 * vin * io * trtf * fsw;
                     p_diode_sys = 0;
                 } else {
-                    // Low-Side: ZVS 開關損耗為 0
                     p_sw_sys = 0; 
-                    // Low-Side: Body Diode 損耗 = 死區順向導通 + 反向恢復(Qrr)
                     const p_dead_cond = 2 * vf * io * tdead * fsw;
                     const p_qrr_recovery = qrr_sys * vin * fsw;
                     p_diode_sys = p_dead_cond + p_qrr_recovery;
                 }
 
-                // 驅動損耗
                 p_gate_sys = qg_sys * vgs * fsw; 
-                
                 p_total_sys = p_cond_sys + p_sw_sys + p_gate_sys + p_diode_sys;
                 
-                // 計算單顆 MOSFET 的功耗與溫度
+                // 計算單顆 MOSFET 溫度
                 p_total_per = p_total_sys / np;
-                estimated_tj = ta + (p_total_per * tja);
+                
+                if (tja !== null) estimated_tj = ta + (p_total_per * tja);
+                if (tca !== null) estimated_tc = ta + (p_total_per * tca);
             }
-
-            const estimated_tc = ta + (p_total_per * tca);
 
             // --- UI 渲染 ---
             document.getElementById('res-ptotal-sys').innerText = p_total_sys.toFixed(3) + " W";
             document.getElementById('res-ptotal-per').innerText = p_total_per.toFixed(3) + " W";
-            document.getElementById('res-tj').innerText = estimated_tj.toFixed(1) + " °C";
-            document.getElementById('res-tc').innerText = estimated_tc.toFixed(1) + " °C";
             document.getElementById('res-duty').innerText = (actual_duty * 100).toFixed(1) + " %";
+            
+            // 處理 Tj 與 Tc 的未知顯示狀態
+            document.getElementById('res-tj').innerText = (tja !== null) ? estimated_tj.toFixed(1) + " °C" : "---";
+            document.getElementById('res-tc').innerText = (tca !== null) ? estimated_tc.toFixed(1) + " °C" : "---";
             
             // Breakdown 單顆顯示
             document.getElementById('det-pcond').innerText = (p_cond_sys / np).toFixed(3) + " W";
@@ -535,29 +615,37 @@
             document.getElementById('det-pgate').innerText = (p_gate_sys / np).toFixed(3) + " W";
             document.getElementById('det-pdiode').innerText = (p_diode_sys / np).toFixed(3) + " W";
 
-            // 視覺回饋：根據角色改變 UI 卡片強調
+            // 視覺回饋
             if(isHighSide) {
-                document.getElementById('card-sw').style.borderColor = '#ef4444'; // Red for HS
+                document.getElementById('card-sw').style.borderColor = '#ef4444'; 
                 document.getElementById('title-sw').className = "label-text text-center text-danger !mb-0 font-bold";
-                document.getElementById('card-diode').style.borderColor = '#374151'; // Dim LS
+                document.getElementById('card-diode').style.borderColor = '#374151'; 
                 document.getElementById('title-diode').className = "label-text text-center !mb-0";
             } else {
-                document.getElementById('card-sw').style.borderColor = '#374151'; // Dim HS
+                document.getElementById('card-sw').style.borderColor = '#374151'; 
                 document.getElementById('title-sw').className = "label-text text-center !mb-0";
-                document.getElementById('card-diode').style.borderColor = '#38bdf8'; // Blue for LS
+                document.getElementById('card-diode').style.borderColor = '#38bdf8'; 
                 document.getElementById('title-diode').className = "label-text text-center text-info !mb-0 font-bold";
             }
 
-            updateWarning(estimated_tj, tj_max);
+            updateWarning(estimated_tj, tj_max, tja !== null);
         }
 
-        function updateWarning(tj, max) {
+        // V7.3 修正：加入 Tj 未知狀態的判斷
+        function updateWarning(tj, max, isTjKnown) {
             const msg = document.getElementById('status-msg');
             const led1 = document.getElementById('led-1');
             const led2 = document.getElementById('led-2');
             const led3 = document.getElementById('led-3');
 
             led1.className = led2.className = led3.className = "status-led bg-slate-800";
+
+            if (!isTjKnown) {
+                msg.innerHTML = "Tc CALCULATED (Tj UNKNOWN)<br><span class='text-[9px] opacity-80'>Please provide θJC or θJA for junction warning</span>";
+                msg.className = "bg-blue-600/20 border border-blue-400/40 p-2 rounded text-[11px] text-center font-bold text-info";
+                led1.className = "status-led bg-info shadow-[0_0_12px_#38bdf8]";
+                return;
+            }
 
             if (tj >= max) {
                 msg.innerHTML = "CRITICAL: LIMIT EXCEEDED<br><span class='text-[9px] opacity-80'>Add Heatsink, Increase Np, or Reduce Freq</span>";
@@ -579,6 +667,7 @@
             if (e.key === "Escape") toggleModal(false);
         });
 
+        // 將所有的 input 綁定計算事件（包含 radio）
         const inputs = document.querySelectorAll('input');
         inputs.forEach(input => input.addEventListener('input', calculate));
 
