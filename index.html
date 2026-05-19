@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MOSFET廢熱計算V7.3</title>
+    <title>MOSFET廢熱計算V7.4</title>
     <!-- MathJax 用於渲染數學公式 -->
     <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
     <script>
@@ -166,7 +166,7 @@
         <header class="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 border-b-2 border-slate-700 pb-4 gap-4">
             <div>
                 <h1 class="text-3xl md:text-5xl font-black italic tracking-tighter text-white drop-shadow-lg">
-                    MOSFET廢熱計算 <span class="text-neon-green">V7.3</span>
+                    MOSFET廢熱計算 <span class="text-neon-green">V7.4</span>
                 </h1>
                 <p class="text-xs font-bold text-slate-400 uppercase mt-2 tracking-widest flex items-center gap-2">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
@@ -179,9 +179,9 @@
                     [ 查看專業級拓樸運算公式 ]
                 </button>
                 <div class="flex gap-5 bg-slate-900 px-4 py-2 border border-slate-700 rounded shadow-inner">
-                    <div class="flex items-center gap-2"><span id="led-1" class="status-led bg-green-500 shadow-[0_0_8px_#22c55e]"></span><span class="text-[10px] font-bold text-slate-300">PWR</span></div>
+                    <div class="flex items-center gap-2"><span id="led-1" class="status-led bg-green-500 shadow-[0_0_8px_#22c55e]"></span><span class="text-[10px] font-bold text-slate-300">SAFE</span></div>
                     <div class="flex items-center gap-2"><span id="led-2" class="status-led bg-slate-700"></span><span class="text-[10px] font-bold text-slate-300">WARN</span></div>
-                    <div class="flex items-center gap-2"><span id="led-3" class="status-led bg-slate-700"></span><span class="text-[10px] font-bold text-slate-300">CRIT</span></div>
+                    <div class="flex items-center gap-2"><span id="led-3" class="status-led bg-slate-700"></span><span class="text-[10px] font-bold text-slate-300">FAIL</span></div>
                 </div>
             </div>
         </header>
@@ -298,9 +298,20 @@
                 
                 <div class="space-y-4 mb-5">
                     <div class="grid grid-cols-2 gap-3">
+                        <!-- V7.4: Limit Temp 模式切換 -->
                         <div>
-                            <label class="label-text text-danger font-bold">Limit T<sub>j,max</sub> (°C)</label>
-                            <input type="number" id="tj-max" value="175" class="input-field !border-danger text-danger bg-red-950/20">
+                            <div class="flex justify-between items-center mb-1">
+                                <label class="label-text text-danger font-bold !mb-0">T_limit(°C)</label>
+                                <div class="flex gap-2">
+                                    <label class="cursor-pointer flex items-center gap-1 text-[10px] text-danger font-bold">
+                                        <input type="radio" name="limit-type" value="tj" checked onchange="calculate()" class="accent-danger"> Tj
+                                    </label>
+                                    <label class="cursor-pointer flex items-center gap-1 text-[10px] text-danger font-bold">
+                                        <input type="radio" name="limit-type" value="tc" onchange="calculate()" class="accent-danger"> Tc
+                                    </label>
+                                </div>
+                            </div>
+                            <input type="number" id="t-max" value="175" class="input-field !border-danger text-danger bg-red-950/20">
                         </div>
                         <div>
                             <label class="label-text">環境 T<sub>A</sub> (°C)</label>
@@ -412,7 +423,7 @@
         </div>
 
         <footer class="mt-10 text-center text-[11px] text-slate-600 font-bold uppercase tracking-widest">
-            Hardware Engineering Tool | Thermal Core v7.3 | Multi-Thermal Mode Supported
+            Hardware Engineering Tool | Thermal Core v7.4 | Advanced Limit & Thermal Mode Supported
         </footer>
     </div>
 
@@ -420,7 +431,7 @@
     <div id="formula-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4">
         <div class="industrial-card w-full max-w-4xl max-h-[90vh] overflow-y-auto p-6 md:p-8 border-info">
             <div class="flex justify-between items-center border-b border-info pb-4 mb-6">
-                <h3 class="text-2xl font-black text-info italic">V7.3 TOPOLOGY & PARALLEL FORMULAS</h3>
+                <h3 class="text-2xl font-black text-info italic">V7.4 TOPOLOGY & PARALLEL FORMULAS</h3>
                 <button onclick="toggleModal(false)" class="text-slate-400 hover:text-white text-4xl font-black transition-colors leading-none">&times;</button>
             </div>
             
@@ -452,8 +463,9 @@
                         $$\text{結溫 } T_j = T_A + (P_{total(per)} \times \theta_{JA})$$
                         $$\text{殼溫 } T_c = T_A + (P_{total(per)} \times \theta_{CA})$$
                         <ul class="list-disc pl-5 mt-3 text-slate-400">
-                            <li>若僅提供 $\theta_{CA}$，則 $T_j$ 無法計算，狀態改為 INFO。</li>
+                            <li>若僅提供 $\theta_{CA}$，則 $T_j$ 無法計算。</li>
                             <li>若僅提供 $\theta_{JA}$，則 $T_c$ 無法計算。</li>
+                            <li>極限溫度警告 (Limit Temp) 可自由切換監控 Tj 或 Tc。</li>
                         </ul>
                     </div>
                 </section>
@@ -535,7 +547,10 @@
             const vf = parseFloat(document.getElementById('vf').value) || 0;
 
             const ta = parseFloat(document.getElementById('ta').value) || 25;
-            const tj_max = parseFloat(document.getElementById('tj-max').value) || 150;
+            
+            // V7.4: 取出溫度極限值與監控目標
+            const t_max = parseFloat(document.getElementById('t-max').value) || 175;
+            const limitType = document.querySelector('input[name="limit-type"]:checked').value;
 
             // --- V7.3 判斷熱阻模式並提取數值 ---
             const mode = document.querySelector('input[name="thermal-mode"]:checked').value;
@@ -628,11 +643,12 @@
                 document.getElementById('title-diode').className = "label-text text-center text-info !mb-0 font-bold";
             }
 
-            updateWarning(estimated_tj, tj_max, tja !== null);
+            // V7.4 傳入預估溫度、極限溫度、監控目標及資訊完整度
+            updateWarning(estimated_tj, estimated_tc, t_max, limitType, tja !== null, tca !== null);
         }
 
-        // V7.3 修正：加入 Tj 未知狀態的判斷
-        function updateWarning(tj, max, isTjKnown) {
+        // V7.4 修正：支援 Tj / Tc 雙模極限警告與未知狀態判斷
+        function updateWarning(tj, tc, max, limitType, isTjKnown, isTcKnown) {
             const msg = document.getElementById('status-msg');
             const led1 = document.getElementById('led-1');
             const led2 = document.getElementById('led-2');
@@ -640,23 +656,41 @@
 
             led1.className = led2.className = led3.className = "status-led bg-slate-800";
 
-            if (!isTjKnown) {
-                msg.innerHTML = "Tc CALCULATED (Tj UNKNOWN)<br><span class='text-[9px] opacity-80'>Please provide θJC or θJA for junction warning</span>";
+            let currentTemp;
+            let isKnown;
+            let tempLabel;
+
+            // 判斷當前使用者想監控哪一種溫度極限
+            if (limitType === 'tj') {
+                currentTemp = tj;
+                isKnown = isTjKnown;
+                tempLabel = 'Tj';
+            } else {
+                currentTemp = tc;
+                isKnown = isTcKnown;
+                tempLabel = 'Tc';
+            }
+
+            // 若想監控的溫度因為熱阻輸入不足而無法計算
+            if (!isKnown) {
+                const calculatedOther = (limitType === 'tj') ? 'Tc CALCULATED' : 'Tj CALCULATED';
+                msg.innerHTML = `${calculatedOther} (${tempLabel} UNKNOWN)<br><span class='text-[9px] opacity-80'>Please provide required thermal resistance for ${tempLabel} limit</span>`;
                 msg.className = "bg-blue-600/20 border border-blue-400/40 p-2 rounded text-[11px] text-center font-bold text-info";
                 led1.className = "status-led bg-info shadow-[0_0_12px_#38bdf8]";
                 return;
             }
 
-            if (tj >= max) {
-                msg.innerHTML = "CRITICAL: LIMIT EXCEEDED<br><span class='text-[9px] opacity-80'>Add Heatsink, Increase Np, or Reduce Freq</span>";
+            // 進行溫度警示判定
+            if (currentTemp >= max) {
+                msg.innerHTML = `CRITICAL: ${tempLabel} LIMIT EXCEEDED<br><span class='text-[9px] opacity-80'>Add Heatsink, Increase Np, or Reduce Freq</span>`;
                 msg.className = "bg-red-600/90 border border-red-400 p-2 rounded text-[11px] text-center font-bold text-white animate-pulse shadow-[0_0_15px_rgba(239,68,68,0.5)]";
                 led3.className = "status-led bg-red-500 shadow-[0_0_12px_#ef4444]";
-            } else if (tj > max * 0.85) {
-                msg.innerHTML = "WARNING: THERMAL MARGIN LOW<br><span class='text-[9px] opacity-80'>Approaching absolute maximum ratings</span>";
+            } else if (currentTemp > max * 0.85) {
+                msg.innerHTML = `WARNING: ${tempLabel} THERMAL MARGIN LOW<br><span class='text-[9px] opacity-80'>Approaching absolute maximum ratings</span>`;
                 msg.className = "bg-yellow-500/90 border border-yellow-300 p-2 rounded text-[11px] text-center font-bold text-black shadow-[0_0_15px_rgba(251,191,36,0.3)]";
                 led2.className = "status-led bg-yellow-400 shadow-[0_0_12px_#fbbf24]";
             } else {
-                msg.innerHTML = "SYSTEM NOMINAL<br><span class='text-[9px] opacity-80'>Thermal dissipation is well balanced</span>";
+                msg.innerHTML = `SYSTEM NOMINAL (${tempLabel} SAFE)<br><span class='text-[9px] opacity-80'>Thermal dissipation is well balanced</span>`;
                 msg.className = "bg-green-600/20 border border-green-400/40 p-2 rounded text-[11px] text-center font-bold text-green-400";
                 led1.className = "status-led bg-green-500 shadow-[0_0_12px_#22c55e]";
             }
